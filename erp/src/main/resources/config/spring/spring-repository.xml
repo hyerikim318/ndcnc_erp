@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="euc-kr"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:p="http://www.springframework.org/schema/p"	    
+    xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans   
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd">
+    
+	<!-- mybatis 객체 준비 -->
+	<context:property-placeholder location="classpath:config/mybatis/db.properties"/>
+
+	<!-- DB 연결 : 커넥션풀 관리가 자동으로 된다. -->
+	<!-- DBCP 사용
+	 -->	
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+		destroy-method="close"
+      	p:driverClassName="${jdbc.oracle.driver}"
+        p:url="${jdbc.oracle.url}"
+        p:username="${jdbc.oracle.username}" 
+        p:password="${jdbc.oracle.password}"
+		/>
+	
+	<!-- spring에서 sqlSession 얻는 과정 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<!-- sqlMapConfig에서 aliase 설정을 자동화 -->
+		<property name="typeAliasesPackage" value="kr.co.hyeri.repository.vo" />			
+		<!-- sqlMapConfig에서 mapper 연결 설정을 자동화 -->
+		<property name="mapperLocations" value="classpath:config/sqlmap/*.xml" />
+		<property name="configLocation" value="classpath:config/mybatis/sqlMapConfig.xml" />		
+	</bean>
+	
+	<!-- mapper interface 개념을 사용하려면 꼭 필요하다. -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="kr.co.hyeri.repository.mapper" />
+	</bean>
+	
+	<!-- 트랜잭션 처리
+	 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+</beans>

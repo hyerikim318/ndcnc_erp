@@ -1,0 +1,34 @@
+@charset "UTF-8";
+
+	ul, li{
+		display:inline;
+		padding: 5px;
+	}
+	table, td{
+		text-align: center;
+		border: 1px solid black;
+		border-collapse: collapse;
+		margin: 0 auto;
+		padding: 10px;
+	}
+	.grayback {
+		background-color: #eee;
+	}
+	button {
+		border: 1px solid black;
+		background-color: #fff;
+		padding: 0 40px;
+		cursor: pointer;
+	}
+	#bntZone {
+		padding: 20px 500px;
+	}
+	#listlength {
+		padding: 10px 450px;
+	}
+	#pageDiv {
+		padding: 0 730px;
+	}
+	#sortInfo {
+		margin-left: 320px;
+	}

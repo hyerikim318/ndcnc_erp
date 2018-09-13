@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.hyeri.repository.mapper.StaffMapper">
+	<resultMap id="staffMap" type="staff">
+		<result column="staff_no" property="staffNo" />
+		<result column="staff_name" property="staffName" />
+		<result column="jumin_no" property="juminNo" />
+		<result column="school_code" property="schoolCode" />
+		<result column="religion_code" property="religionCode" />
+		<result column="graduate_date" property="graduateDate" />
+		<result column="skill_code" property="skillCode" />
+		<result column="sub_skill" property="subSkill" />
+		<collection property="staffSkill" resultMap="staffSkillMap"/>
+		<collection property="religion" resultMap="religionMap"/>
+	</resultMap>
+	<resultMap id="staffSkillMap" type="staffSkill">
+		<result column="staff_no" property="staffNo" />
+		<result column="staff_skill_no" property="staffSkillNo" />
+		<result column="skill_code" property="skillCode" />
+	</resultMap>
+	<resultMap id="religionMap" type="religion">
+		<result column="religion_code" property="religionCode" />
+		<result column="religion_name" property="religionName" />
+	</resultMap>
+	
+	<insert id="insertStaff" parameterType="staff">
+    	<selectKey resultType="int" keyProperty="staffNo" order="BEFORE">
+			select staff_seq.nextval from dual 
+		</selectKey>
+	insert into staff (staff_no, staff_name, jumin_no, school_code, religion_code, graduate_date, sub_skill)
+	values (#{staffNo}, #{staffName}, #{juminNo}, #{schoolCode}, #{religionCode}, #{graduateDate}, #{subSkill})
+	</insert>
+	
+	<insert id="insertSkill" parameterType="staffSkill">
+	insert into staff_skill (staff_skill_no, staff_no, skill_code)
+	values (staff_skill_seq.nextval, #{staffNo}, #{skillCode})
+	</insert>
+	
+	<delete id="deleteStaff" parameterType="int">
+	delete
+	  from staff
+	 where staff_no = #{staffNo}
+	</delete>
+	
+	<delete id="deleteStaffSkill" parameterType="int">
+	delete
+	  from staff_skill
+	 where staff_no = #{staffNo}
+	</delete>
+	
+	<select id="selectStaff" parameterType="staffSearch" resultMap="staffMap">
+	
+		select X.*
+      from (
+	      select rownum as rnum, A.*
+      	from (
+      	
+	select f.staff_no, f.staff_name, f.jumin_no, r.religion_name, f.graduate_date
+	  from staff f
+     inner join staff_skill k
+	    on f.staff_no = k.staff_no
+     inner join code_religion r
+   	    on f.religion_code = r.religion_code
+	 <where>
+        <if test="staffName != ''">
+		  	f.staff_name  like '%' || #{staffName} || '%'
+		</if>
+		<if test="religionCode != ''">
+		  	and f.religion_code = #{religionCode}
+		</if>
+		<if test="graduateBegin != ''">
+		    and  f.graduate_date <![CDATA[>=]]> TO_CHAR(TO_DATE(#{graduateBegin},'YYYY-MM-DD'), 'YYYYMMDD')
+		</if>
+		<if test="graduateEnd != ''">
+		    and f.graduate_date <![CDATA[<=]]> TO_CHAR(TO_DATE(#{graduateEnd},'YYYY-MM-DD'), 'YYYYMMDD')
+		</if>
+		<if test="subSkillCond == 1">
+			and f.sub_skill like '%' || #{subSkill} || '%'
+		</if>
+		    
+		    and k.skill_code in 
+			<foreach collection="skills" item="skillCode" open="(" separator="," close=")">
+	            #{skillCode}
+	        </foreach>
+		    and substr(f.jumin_no, 8, 1) in 
+			<foreach collection="sexs" item="sexCode" open="(" separator="," close=")">
+	            #{sexCode}
+	        </foreach>
+		    and f.school_code  in 
+			<foreach collection="schools" item="schoolCode" open="(" separator="," close=")">
+	            #{schoolCode}
+	        </foreach>
+		<if test="subSkillCond == 2">
+			or f.sub_skill like '%' || #{subSkill} || '%'
+		</if>
+	</where>
+	     group by f.staff_no, f.staff_name, f.jumin_no, r.religion_name, f.graduate_date
+	     
+	   	 order by
+  			<choose>
+			    <when test="sortColumn eq 'staff_no'"> staff_no </when>
+			    <when test="sortColumn eq 'staff_name'"> staff_name </when>
+			    <when test="sortColumn eq 'staff_sex'">  substr(jumin_no, 8, 1) </when>
+			    <when test="sortColumn eq 'religion_name'"> religion_name </when>
+			    <when test="sortColumn eq 'graduate_date'"> graduate_date </when>
+			</choose> 
+		    <choose>
+		      <when test="sortType eq 'desc'"> DESC </when>
+		      <otherwise> ASC </otherwise>
+		    </choose>
+	     
+	      ) A
+	       where <![CDATA[rownum <= #{endCount}]]>
+	             ) X
+     where <![CDATA[X.rnum >= #{beginCount}]]>
+	</select>
+	
+	<select id="selectStaffCnt" parameterType="staffSearch" resultType="int">
+      	  select count(*)
+      	from (
+	select f.staff_no, f.staff_name, f.jumin_no, r.religion_name, f.graduate_date
+	  from staff f
+     inner join staff_skill k
+	    on f.staff_no = k.staff_no
+     inner join code_religion r
+   	    on f.religion_code = r.religion_code
+	 <where>
+        <if test="staffName != ''">
+		  	f.staff_name  like '%' || #{staffName} || '%'
+		</if>
+		<if test="religionCode != ''">
+		  	and f.religion_code = #{religionCode}
+		</if>
+		<if test="graduateBegin != ''">
+		    and  f.graduate_date <![CDATA[>=]]> TO_CHAR(TO_DATE(#{graduateBegin},'YYYY-MM-DD'), 'YYYYMMDD')
+		</if>
+		<if test="graduateEnd != ''">
+		    and f.graduate_date <![CDATA[<=]]> TO_CHAR(TO_DATE(#{graduateEnd},'YYYY-MM-DD'), 'YYYYMMDD')
+		</if>
+		<if test="subSkillCond == 1">
+			and f.sub_skill like '%' || #{subSkill} || '%'
+		</if>
+		    
+		    and k.skill_code in 
+			<foreach collection="skills" item="skillCode" open="(" separator="," close=")">
+	            #{skillCode}
+	        </foreach>
+		    and substr(f.jumin_no, 8, 1) in 
+			<foreach collection="sexs" item="sexCode" open="(" separator="," close=")">
+	            #{sexCode}
+	        </foreach>
+		    and f.school_code  in 
+			<foreach collection="schools" item="schoolCode" open="(" separator="," close=")">
+	            #{schoolCode}
+	        </foreach>
+		<if test="subSkillCond == 2">
+			or f.sub_skill like '%' || #{subSkill} || '%'
+		</if>
+	</where>
+	     group by f.staff_no, f.staff_name, f.jumin_no, r.religion_name, f.graduate_date
+	     
+	   	 order by
+  			<choose>
+			    <when test="sortColumn eq 'staff_no'"> staff_no </when>
+			    <when test="sortColumn eq 'staff_name'"> staff_name </when>
+			    <when test="sortColumn eq 'staff_sex'">  substr(jumin_no, 8, 1) </when>
+			    <when test="sortColumn eq 'religion_name'"> religion_name </when>
+			    <when test="sortColumn eq 'graduate_date'"> graduate_date </when>
+			</choose> 
+		    <choose>
+		      <when test="sortType eq 'desc'"> DESC </when>
+		      <otherwise> ASC </otherwise>
+		    </choose>
+		     ) A
+	     
+	</select>
+
+	<select id="selectStaffByStaffNo" parameterType="int" resultMap="staffMap">
+	select *
+	  from staff f
+     inner join staff_skill k
+        on f.staff_no = k.staff_no
+	 where k.staff_no = #{staffNo}
+	 order by k.staff_skill_no asc
+	</select>
+	
+	<update id="updateStaff" parameterType="staff">
+	update staff
+	   set staff_name = #{staffName},
+	       jumin_no = #{juminNo},
+	       school_code = #{schoolCode},
+	       religion_code = #{religionCode},
+	       graduate_date = #{graduateDate},
+	       sub_skill = #{subSkill}
+	 where staff_no = #{staffNo}
+	</update>
+
+</mapper>
+
